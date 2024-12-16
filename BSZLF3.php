@@ -150,51 +150,98 @@
                 throw new Exception("Bitte geben Sie eine Zahl ein.");
             }
 
+            $decimal = null;
+            $steps = "";
+
+            // Eingabe -> Dezimal (mit Rechenweg)
             switch ($inputFormat) {
                 case 'binary':
                     if (!preg_match('/^[01]+$/', $input)) {
                         throw new Exception("Ungültiges Binärformat.");
                     }
-                    $decimal = bindec($input);
+                    $decimal = 0;
+                    $length = strlen($input);
+                    for ($i = 0; $i < $length; $i++) {
+                        $bit = $input[$length - $i - 1];
+                        $power = pow(2, $i);
+                        $value = $bit * $power;
+                        $steps .= "Stelle $bit × 2^$i = $value<br>";
+                        $decimal += $value;
+                    }
+                    $steps .= "Gesamtsumme: $decimal<br>";
                     break;
                 case 'hexadecimal':
                     if (!preg_match('/^[0-9a-fA-F]+$/', $input)) {
                         throw new Exception("Ungültiges Hexadezimalformat.");
                     }
-                    $decimal = hexdec($input);
+                    $decimal = 0;
+                    $length = strlen($input);
+                    $hexMap = array_merge(range(0, 9), array_combine(range('a', 'f'), range(10, 15)));
+                    for ($i = 0; $i < $length; $i++) {
+                        $char = strtolower($input[$length - $i - 1]);
+                        $value = $hexMap[$char];
+                        $power = pow(16, $i);
+                        $result = $value * $power;
+                        $steps .= "Stelle $char ($value) × 16^$i = $result<br>";
+                        $decimal += $result;
+                    }
+                    $steps .= "Gesamtsumme: $decimal<br>";
                     break;
                 case 'decimal':
                     if (!is_numeric($input)) {
                         throw new Exception("Ungültiges Dezimalformat.");
                     }
                     $decimal = (int)$input;
+                    $steps .= "Eingabe ist bereits Dezimal: $decimal<br>";
                     break;
                 default:
                     throw new Exception("Ungültiges Eingabeformat.");
             }
 
+            // Dezimal -> Zielausgabeformat (mit Rechenweg)
             switch ($outputFormat) {
                 case 'binary':
-                    $output = decbin($decimal);
+                    $output = "";
+                    $current = $decimal;
+                    while ($current > 0) {
+                        $remainder = $current % 2;
+                        $steps .= "$current ÷ 2 = " . intdiv($current, 2) . " Rest $remainder<br>";
+                        $output = $remainder . $output;
+                        $current = intdiv($current, 2);
+                    }
+                    $steps .= "Binärer Wert: $output<br>";
                     break;
                 case 'hexadecimal':
-                    $output = dechex($decimal);
+                    $output = "";
+                    $hexMap = array_merge(range(0, 9), array_combine(range(10, 15), range('a', 'f')));
+                    $current = $decimal;
+                    while ($current > 0) {
+                        $remainder = $current % 16;
+                        $char = $hexMap[$remainder];
+                        $steps .= "$current ÷ 16 = " . intdiv($current, 16) . " Rest $char ($remainder)<br>";
+                        $output = $char . $output;
+                        $current = intdiv($current, 16);
+                    }
+                    $steps .= "Hexadezimaler Wert: $output<br>";
                     break;
                 case 'decimal':
                 default:
                     $output = $decimal;
+                    $steps .= "Dezimal bleibt unverändert: $output<br>";
                     break;
             }
 
             echo "<div class='results'>";
             echo "<div class='result-item'><strong>Eingabeformat:</strong> $inputFormat<br><strong>Zahl:</strong> $input</div>";
             echo "<div class='result-item'><strong>Ausgabeformat:</strong> $outputFormat<br><strong>Ergebnis:</strong> $output</div>";
+            echo "<div class='result-item'><strong>Rechenweg:</strong><br>$steps</div>";
             echo "</div>";
         } catch (Exception $e) {
             echo "<div class='error'>{$e->getMessage()}</div>";
         }
     }
     ?>
+
 </div>
 </body>
 </html>
